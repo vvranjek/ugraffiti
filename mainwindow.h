@@ -3,7 +3,11 @@
 
 #include <QMainWindow>
 #include <QSettings>
+#include <QDialog>
+#include <QLabel>
+#include <QPixmap>
 
+#include "picturewindow.h"
 #include "sessionmanager.h"
 
 
@@ -29,7 +33,12 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
-    SessionManager      *session_mgr;
+    SessionManager *session_mgr;
+
+    pictureWindow *imageWindow;
+    QLabel *imageLabel;
+
+    int distance;
 
     /**
      * \brief handle arrival of new data

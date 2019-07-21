@@ -1,15 +1,26 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QHBoxLayout>
 
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    distance(200)
 {
     ui->setupUi(this);
 
     session_mgr = new SessionManager(this);
+    imageWindow = new pictureWindow(this);
+    imageWindow->resize(200,200);
+    imageWindow->show();
+
+
+
+    //imageWindow->setWindowFlags(Qt::FramelessWindowHint);
+    //imageWindow->setWindowState( imageWindow->windowState() | Qt::WindowFullScreen);
+    //imageWindow->showFullScreen();
 
     // handle reception of new data from serial port
     connect(session_mgr, &SessionManager::dataReceived, this, &MainWindow::handleDataReceived);
@@ -42,6 +53,8 @@ void MainWindow::handleDataReceived(const QByteArray &data)
         qDebug() << "distance: " << distance_int;
 
         ui->debugEdit->append(QString::number(distance_int));
+
+        distance = distance_int;
 
         emit distanceReceived(distance_int);
     }

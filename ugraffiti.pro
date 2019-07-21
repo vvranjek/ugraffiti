@@ -28,17 +28,23 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         outputmanager.cpp \
+        picturedialog.cpp \
+        picturewindow.cpp \
         sessionmanager.cpp \
         settings.cpp
 
 HEADERS += \
         mainwindow.h \
         outputmanager.h \
+        picturedialog.h \
+        picturewindow.h \
         sessionmanager.h \
         settings.h
 
 FORMS += \
-        mainwindow.ui
+        mainwindow.ui \
+        picturedialog.ui \
+        picturewindow.ui
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
