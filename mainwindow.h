@@ -21,6 +21,7 @@ public:
 
 signals:
     void openSerial();
+    void distanceReceived(int value);
 
 private slots:
     void on_ConnectButtonon_released();

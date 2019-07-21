@@ -24,9 +24,29 @@ MainWindow::~MainWindow()
 
 void MainWindow::handleDataReceived(const QByteArray &data)
 {
-    qDebug() << "Data" << data;
 
-    ui->debugEdit->append(data);
+    qDebug() << "data: " << data;
+    const QString dist_str = "dist=";
+
+
+    int index = data.lastIndexOf(dist_str);
+
+    if (index == 0) {
+        //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
+        QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
+        //qDebug() << "distance: " << distance_str;
+
+
+        int distance_int = distance_str.toInt();
+
+        qDebug() << "distance: " << distance_int;
+
+        ui->debugEdit->append(QString::number(distance_int));
+
+        emit distanceReceived(distance_int);
+    }
+
+
 }
 
 void MainWindow::on_ConnectButtonon_released()

@@ -226,8 +226,7 @@ bool SessionManager::isSessionOpen() const
 
 void SessionManager::readData()
 {
-    QByteArray data(serial->readAll());
-
+    QByteArray data(serial->readLine());
     emit dataReceived(data);
 }
 
