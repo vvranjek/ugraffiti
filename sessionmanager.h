@@ -65,6 +65,8 @@ public:
      */
 	void openSession(QString profile);
 
+    void openSerial();
+
     /**
      * \brief close current serial port session
      */

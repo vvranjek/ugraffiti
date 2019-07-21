@@ -20,6 +20,8 @@
 #include <QDebug>
 #include "settings.h"
 
+
+
 SessionManager::SessionManager(QObject *parent) :
     QObject(parent)
 {
@@ -154,6 +156,59 @@ void SessionManager::openSession(const QString profile)
         //emit sessionClosed();
     }
 }
+
+/* The same as openSession, but without profile */
+void SessionManager::openSerial()
+{
+    // try converting port config from the hash
+    QSerialPort::BaudRate baud_rate = QSerialPort::Baud9600;
+    QSerialPort::DataBits data_bits = QSerialPort::Data8;
+    QSerialPort::Parity parity = QSerialPort::NoParity;
+    QSerialPort::StopBits stop_bits = QSerialPort::OneStop;
+    QSerialPort::FlowControl flow_control = QSerialPort::NoFlowControl;
+
+    // configure port
+#if (QT_VERSION < QT_VERSION_CHECK(5, 5, 0)) && defined(Q_OS_MAC)
+    // 'device not found' error on MacOsX when we try to open port
+    // after calling setPortName with a full device name (eg: /dev/ttyUSB01)
+
+    // issues:
+    // - https://github.com/develersrl/serial-ninja/issues/7
+    // - https://github.com/develersrl/serial-ninja/issues/17
+    // this is a QSerialPort bug, corrected for Qt > 5.5:
+    // - https://codereview.qt-project.org/#/c/108571/
+    if (port_cfg[QStringLiteral("device")].contains('/'))
+        serial->setPortName(port_cfg[QStringLiteral("device")]);
+    else
+        serial->setPort(QSerialPortInfo(port_cfg[QStringLiteral("device")]));
+#else
+    // tested on linux and windows
+    // and this is necessary to make QSerialPort work with pseudo
+    // terminal created with socat for example
+    serial->setPortName("/dev/ttyUSB0");
+#endif
+    serial->setBaudRate(baud_rate);
+    serial->setDataBits(data_bits);
+    serial->setParity(parity);
+    serial->setStopBits(stop_bits);
+    serial->setFlowControl(flow_control);
+
+    // flag indicating that a connection is in progress (eventually successful or not)
+    in_progress = true;
+
+    // open serial port
+    if (serial->open(QIODevice::ReadWrite))
+    {
+        emit sessionOpened();
+    }
+    else
+    {
+        // here, stopped means 'no connection is in progress'
+        emit sessionOpened();
+        //emit sessionClosed();
+    }
+}
+
 
 void SessionManager::closeSession()
 {

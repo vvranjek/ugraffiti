@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QSettings>
 
 #include "sessionmanager.h"
 
@@ -17,6 +18,12 @@ class MainWindow : public QMainWindow
 public:
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+signals:
+    void openSerial();
+
+private slots:
+    void on_ConnectButtonon_released();
 
 private:
     Ui::MainWindow *ui;
