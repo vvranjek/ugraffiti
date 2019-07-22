@@ -47,6 +47,125 @@
      </rect>
     </property>
    </widget>
+   <widget class="QSpinBox" name="min_spinBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>30</y>
+      <width>71</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>20000</number>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="max_spinBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>60</y>
+      <width>71</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>20000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>30</y>
+      <width>67</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Min</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>60</y>
+      <width>67</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Max</string>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="dist_lcdNumber">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>30</y>
+      <width>64</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::Box</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Plain</enum>
+    </property>
+    <property name="lineWidth">
+     <number>1</number>
+    </property>
+    <property name="smallDecimalPoint">
+     <bool>false</bool>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::Flat</enum>
+    </property>
+   </widget>
+   <widget class="QLCDNumber" name="dist_filter_lcdNumber">
+    <property name="geometry">
+     <rect>
+      <x>520</x>
+      <y>60</y>
+      <width>64</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Plain</enum>
+    </property>
+    <property name="segmentStyle">
+     <enum>QLCDNumber::Flat</enum>
+    </property>
+   </widget>
+   <widget class="QSpinBox" name="hyst_spinBox">
+    <property name="geometry">
+     <rect>
+      <x>340</x>
+      <y>90</y>
+      <width>71</width>
+      <height>26</height>
+     </rect>
+    </property>
+    <property name="maximum">
+     <number>20000</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>260</x>
+      <y>90</y>
+      <width>67</width>
+      <height>17</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Hyst</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menuBar">
    <property name="geometry">

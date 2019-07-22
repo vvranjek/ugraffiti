@@ -28,22 +28,20 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         outputmanager.cpp \
-        picturedialog.cpp \
         picturewindow.cpp \
         sessionmanager.cpp \
         settings.cpp
 
 HEADERS += \
+        art_defines.h \
         mainwindow.h \
         outputmanager.h \
-        picturedialog.h \
         picturewindow.h \
         sessionmanager.h \
         settings.h
 
 FORMS += \
         mainwindow.ui \
-        picturedialog.ui \
         picturewindow.ui
 
 # Default rules for deployment.

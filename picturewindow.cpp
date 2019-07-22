@@ -14,7 +14,7 @@ pictureWindow::pictureWindow(QWidget *parent) :
     //ui->HLayout->setContentsMargins(0,0,0,0);
     //ui->HLayout->setSpacing(0);
 
-    pixmap.load("/home/vid/src/ugraffiti/pics/1.jpg");
+    pixmap.load("/home/vid/src/ugraffiti/build-ugraffiti-Qt_5_2_1-Debug/../art/maribor/66.jpg");
     //QPixmap scaled=pixmap.scaled ( 800, 480, Qt::IgnoreAspectRatio, Qt::FastTransformation );
 
     ui->imageLabel->setPixmap(pixmap);
@@ -30,7 +30,16 @@ pictureWindow::~pictureWindow()
     delete ui;
 }
 
+void pictureWindow::setPicture(QString value)
+{
+    pixmap.load(value);
+    ui->imageLabel->setPixmap(pixmap);
+    ui->imageLabel->setScaledContents( true );
+    ui->imageLabel->setSizePolicy( QSizePolicy::Ignored, QSizePolicy::Ignored );
+}
+
 void pictureWindow::on_fullscreenButton_released()
 {
     showFullScreen();
+    ui->fullscreenButton->setVisible(false);
 }

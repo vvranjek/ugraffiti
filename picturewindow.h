@@ -15,6 +15,8 @@ public:
     explicit pictureWindow(QWidget *parent = nullptr);
     ~pictureWindow();
 
+    void setPicture(QString value);
+
 private slots:
     void on_fullscreenButton_released();
 
