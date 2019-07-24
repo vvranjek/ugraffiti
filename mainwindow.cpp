@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QTimer>
 #include <QSettings>
+#include <QSerialPortInfo>
 
 #include <QDebug>
 
@@ -21,9 +22,11 @@ MainWindow::MainWindow(QWidget *parent) :
 
     session_mgr = new SessionManager(this);
     imageWindow = new pictureWindow(this);
-    imageWindow->resize(200,200);
+    imageWindow->resize(640,480);
+    imageWindow->move(300, 300);
     imageWindow->show();
 
+        timerNext = new QTimer(this);
 
 
     //imageWindow->setWindowFlags(Qt::FramelessWindowHint);
@@ -31,6 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //imageWindow->showFullScreen();
 
     // handle reception of new data from serial port
+    connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCity()));
     connect(session_mgr, &SessionManager::dataReceived, this, &MainWindow::handleDataReceived);
     connect(this, &MainWindow::openSerial, session_mgr, &SessionManager::openSerial);
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
@@ -39,12 +43,17 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(processDistance()));
     timer->start(30);
 
+    refreshPorts();
+
     /* Load settings */
     ui->max_spinBox->setValue(settings->value("dist_max").toInt());
     ui->min_spinBox->setValue(settings->value("dist_min").toInt());
     ui->hyst_spinBox->setValue(settings->value("hyst").toInt());
+    ui->deviceComboBox->setCurrentText(settings->value("port").toString());
+    ui->nextCitySpinBox->setValue(settings->value("next").toInt());
 
 
+    timerNext->start(ui->nextCitySpinBox->value()*1000);
 }
 
 MainWindow::~MainWindow()
@@ -70,8 +79,6 @@ void MainWindow::handleDataReceived(const QByteArray &data)
         int distance_int = distance_str.toInt();
 
         //qDebug() << "distance: " << distance_int;
-
-        ui->debugEdit->append(QString::number(distance_int));
 
         distance = distance_int;
 
@@ -134,6 +141,8 @@ void MainWindow::processDistance()
     // TODO: get city
 
     pic_num = MainWindow::cityPics() * (1.0-distance_percent);
+
+    if (pic_num < 1) pic_num = 1;
 
     //qDebug() << cityPics() << " * " << distance_percent << " = " << pic_num;
 
@@ -206,4 +215,60 @@ void MainWindow::on_hyst_spinBox_valueChanged(int arg1)
 {
     hyst_value = arg1;
     settings->setValue("hyst", arg1);
+}
+
+void MainWindow::refreshPorts()
+{
+    QList<QSerialPortInfo> ports(QSerialPortInfo::availablePorts());
+    for (int idx = 0; idx < ports.length(); ++idx)
+    {
+        const QSerialPortInfo& port_info = ports.at(idx);
+        ui->deviceComboBox->addItem(port_info.systemLocation());
+
+        // construct description tooltip
+        QString tooltip;
+
+        // add description if not empty
+        if (!port_info.description().isEmpty())
+            tooltip.append(port_info.description());
+        if (!port_info.manufacturer().isEmpty())
+        {
+            // add ' / manufacturer' if not empty
+            if (!tooltip.isEmpty())
+                tooltip.push_back(QStringLiteral(" / "));
+            tooltip.append(port_info.manufacturer());
+        }
+        // assign portName
+        if (tooltip.isEmpty())
+            tooltip = port_info.portName();
+
+        ui->deviceComboBox->setItemData(idx, tooltip, Qt::ToolTipRole);
+    }
+
+}
+
+void MainWindow::on_deviceComboBox_currentIndexChanged(const QString &arg1)
+{
+    settings->setValue("port", arg1);
+}
+
+void MainWindow::on_pushButton_2_released()
+{
+    nextCity();
+}
+
+void MainWindow::nextCity()
+{
+    city++;
+    if (city > places_max) {
+        city = 1;
+    }
+}
+
+void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
+{
+    if (arg1 != 0) {
+        timerNext->start(arg1*1000);
+        settings->setValue("next", arg1);
+    }
 }

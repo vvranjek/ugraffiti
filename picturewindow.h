@@ -2,6 +2,7 @@
 #define PICTUREWINDOW_H
 
 #include <QMainWindow>
+#include <QKeyEvent>
 
 namespace Ui {
 class pictureWindow;
@@ -24,6 +25,9 @@ private:
     Ui::pictureWindow *ui;
 
     QPixmap pixmap;
+
+protected:
+    void keyPressEvent(QKeyEvent* event);
 };
 
 #endif // PICTUREWINDOW_H

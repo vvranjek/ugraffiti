@@ -43,3 +43,12 @@ void pictureWindow::on_fullscreenButton_released()
     showFullScreen();
     ui->fullscreenButton->setVisible(false);
 }
+
+void pictureWindow::keyPressEvent(QKeyEvent *event)
+{
+    if(event->key() == Qt::Key_Escape)
+       {
+           showNormal();
+           ui->fullscreenButton->setVisible(true);
+       }
+}

@@ -39,6 +39,16 @@ private slots:
 
     void on_hyst_spinBox_valueChanged(int arg1);
 
+    void refreshPorts();
+
+    void on_deviceComboBox_currentIndexChanged(const QString &arg1);
+
+    void on_pushButton_2_released();
+
+    void nextCity();
+
+    void on_nextCitySpinBox_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 
@@ -48,6 +58,8 @@ private:
 
     pictureWindow *imageWindow;
     QLabel *imageLabel;
+
+    QTimer *timerNext;
 
     float distance;
     float distance_prev;
