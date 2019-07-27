@@ -30,7 +30,8 @@ SOURCES += \
         outputmanager.cpp \
         picturewindow.cpp \
         sessionmanager.cpp \
-        settings.cpp
+        settings.cpp \
+    worker.cpp
 
 HEADERS += \
         art_defines.h \
@@ -38,7 +39,8 @@ HEADERS += \
         outputmanager.h \
         picturewindow.h \
         sessionmanager.h \
-        settings.h
+        settings.h \
+    worker.h
 
 FORMS += \
         mainwindow.ui \
