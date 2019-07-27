@@ -31,8 +31,6 @@ private slots:
     void on_ConnectButtonon_released();
     void processDistance();
 
-    void on_spinBox_valueChanged(int arg1);
-
     void on_max_spinBox_valueChanged(int arg1);
 
     void on_min_spinBox_valueChanged(int arg1);
@@ -48,6 +46,8 @@ private slots:
     void nextCity();
 
     void on_nextCitySpinBox_valueChanged(int arg1);
+
+    void on_smooth_SpinBox_valueChanged(double arg1);
 
 private:
     Ui::MainWindow *ui;
@@ -72,6 +72,8 @@ private:
     int dist_max;
 
     int city;
+
+    int pic_prev;
 
     /**
      * \brief handle arrival of new data

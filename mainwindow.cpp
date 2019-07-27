@@ -51,9 +51,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->hyst_spinBox->setValue(settings->value("hyst").toInt());
     ui->deviceComboBox->setCurrentText(settings->value("port").toString());
     ui->nextCitySpinBox->setValue(settings->value("next").toInt());
+    ui->smooth_SpinBox->setValue(settings->value("smooth").toDouble());
 
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
+
+    on_ConnectButtonon_released();
 }
 
 MainWindow::~MainWindow()
@@ -63,7 +66,6 @@ MainWindow::~MainWindow()
 
 void MainWindow::handleDataReceived(const QByteArray &data)
 {
-
     //qDebug() << "data: " << data;
     const QString dist_str = "dist=";
 
@@ -84,8 +86,12 @@ void MainWindow::handleDataReceived(const QByteArray &data)
 
         ui->dist_lcdNumber->display(distance);
 
-        emit distanceReceived(distance_int);
+       // emit distanceReceived(distance_int);
+
+          // processDistance();
     }
+
+
 
 
 }
@@ -111,12 +117,13 @@ void MainWindow::processDistance()
     //distance = 0.98(distance_prev - distance) + 0.2*distance;
 
     /* Smooth filter */
-    dist_filtered = (float)distance_prev + (float)((float)distance - distance_prev)*0.3;
+    dist_filtered = (float)distance_prev + (float)((float)distance - distance_prev)*ui->smooth_SpinBox->value();
     distance_prev = dist_filtered;
     ui->dist_filter_lcdNumber->display(dist_filtered);
 
-    /* Hysteresis filter */
+    //dist_filtered = distance;
 
+    /* Hysteresis filter */
     if (dist_filtered > hyst_center + hyst_value) {
         hyst_center = dist_filtered - hyst_value;
     }
@@ -125,34 +132,27 @@ void MainWindow::processDistance()
         hyst_center = dist_filtered + hyst_value;
     }
 
-    //qDebug() << "Filtered is: " << dist_filtered;
-
     dist_final = hyst_center;
     distance_percent =  ((dist_final-dist_min)/(float)(dist_max-dist_min));
     qDebug() << "Percent is: " << distance_percent;
 
 
-
-
     /* Update picture */
     int pic_num;
-
-    int city = 1;
-    // TODO: get city
-
-    pic_num = MainWindow::cityPics() * (1.0-distance_percent);
+    pic_num = (int)(MainWindow::cityPics() * (1.0f-distance_percent));
 
     if (pic_num < 1) pic_num = 1;
 
-    //qDebug() << cityPics() << " * " << distance_percent << " = " << pic_num;
-
-    QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
-
-    qDebug() << "Filename: " << filename;
-
-    imageWindow->setPicture(filename);
+    //QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
+    //imageWindow->setPicture(filename);
 
 
+    if (pic_num != pic_prev) {
+        QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
+        qDebug() << "Filename: " << filename;
+        pic_prev = pic_num;
+        imageWindow->setPicture(filename);
+    }
 }
 
 int MainWindow::cityPics(void)
@@ -192,11 +192,6 @@ QString MainWindow::cityFilename(void)
     default :
         return default_location + "/maribor/";
     }
-}
-
-void MainWindow::on_spinBox_valueChanged(int arg1)
-{
-
 }
 
 void MainWindow::on_max_spinBox_valueChanged(int arg1)
@@ -260,9 +255,11 @@ void MainWindow::on_pushButton_2_released()
 void MainWindow::nextCity()
 {
     city++;
-    if (city > places_max) {
+    if (city > places_max -1) {
         city = 1;
     }
+
+    qDebug() << "City: " << city;
 }
 
 void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
@@ -271,4 +268,9 @@ void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
         timerNext->start(arg1*1000);
         settings->setValue("next", arg1);
     }
+}
+
+void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
+{
+    settings->setValue("smooth", arg1);
 }
