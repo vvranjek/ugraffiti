@@ -6,6 +6,7 @@
 #include <QTimer>
 #include <QSettings>
 #include <QSerialPortInfo>
+#include <QFileDialog>
 
 #include <QDebug>
 
@@ -48,6 +49,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCity()));
     connect(session_mgr, &SessionManager::dataReceived, this, &MainWindow::handleDataReceived);
     connect(this, &MainWindow::openSerial, session_mgr, &SessionManager::openSerial);
+    connect(this, &MainWindow::closeSerial, session_mgr, &SessionManager::closeSession);
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
 
     QTimer *timer = new QTimer(this);
@@ -63,11 +65,14 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->deviceComboBox->setCurrentText(settings->value("port").toString());
     ui->nextCitySpinBox->setValue(settings->value("next").toInt());
     ui->smooth_SpinBox->setValue(settings->value("smooth").toDouble());
+    ui->artPath->setText(settings->value("artPath").toString());
 
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
 
     //on_ConnectButtonon_released();
+
+    ui->ConnectButtonon->toggle();
 }
 
 MainWindow::~MainWindow()
@@ -110,8 +115,31 @@ void MainWindow::handleDataReceived(const QByteArray &data)
 
 void MainWindow::on_ConnectButtonon_released()
 {
-    emit openSerial();
+//    ui->ConnectButtonon->toggle();
+
+//    if (ui->ConnectButtonon->isChecked()) {
+//        emit openSerial();
+//        ui->ConnectButtonon->setText("Disconnect");
+//    }
+//    else {
+//        emit closeSerial();
+//        ui->ConnectButtonon->setText("Connect");
+//    }
 }
+
+
+void MainWindow::on_ConnectButtonon_toggled(bool checked)
+{
+        if (ui->ConnectButtonon->isChecked()) {
+            emit openSerial();
+            ui->ConnectButtonon->setText("Disconnect");
+        }
+        else {
+            emit closeSerial();
+            ui->ConnectButtonon->setText("Connect");
+        }
+}
+
 
 void MainWindow::processDistance()
 {
@@ -191,7 +219,7 @@ int MainWindow::cityPics(void)
 QString MainWindow::cityFilename(void)
 {
 
-    QString default_location = QDir::currentPath() + "/../art";
+    QString default_location = ui->artPath->text();
 
     switch (city) {
     case Maribor :
@@ -362,3 +390,11 @@ void MainWindow::deleteObject(QObject* thingy)
 
 
 
+
+
+void MainWindow::on_artPathButton_released()
+{
+    artPath = QFileDialog::getExistingDirectory(this, "Choose path to art folder");
+    ui->artPath->setText(artPath);
+    settings->setValue("artPath", artPath);
+}

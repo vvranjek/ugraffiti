@@ -28,6 +28,7 @@ public:
 
 signals:
     void openSerial();
+    void closeSerial();
     void distanceReceived(int value);
     void pictureReady(QString pic);
 
@@ -54,6 +55,10 @@ private slots:
     void on_nextCitySpinBox_valueChanged(int arg1);
 
     void on_smooth_SpinBox_valueChanged(double arg1);
+
+    void on_ConnectButtonon_toggled(bool checked);
+
+    void on_artPathButton_released();
 
 private:
     Ui::MainWindow *ui;
@@ -83,6 +88,8 @@ private:
     int city;
 
     int pic_prev;
+
+    QString artPath;
 
     /**
      * \brief handle arrival of new data
