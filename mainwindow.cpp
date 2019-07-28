@@ -18,13 +18,24 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+
+    /* THREAD */
+
+    mythingy = new QObject(this);
+    QThread* thisthread = this->thread();
+    QThread* mainthread = QCoreApplication::instance()->thread();
+    //breakpoint here to check thisthread and mainthread
+    Worker *worker = new Worker(mythingy, this);
+    //worker->doWork("");
+    connect(worker, SIGNAL(deleteObject(QObject*)), this, SLOT(deleteObject(QObject*)));
+    connect(this, SIGNAL(pictureReady(QString)), worker, SLOT(setPicture(QString)));
+
+
+
     settings = new QSettings("MySoft", "Star Runner");
 
     session_mgr = new SessionManager(this);
-    imageWindow = new pictureWindow(this);
-    imageWindow->resize(640,480);
-    imageWindow->move(300, 300);
-    imageWindow->show();
+
 
         timerNext = new QTimer(this);
 
@@ -56,12 +67,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
 
-    on_ConnectButtonon_released();
+    //on_ConnectButtonon_released();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
+    //worker->deleteLater();
 }
 
 void MainWindow::handleDataReceived(const QByteArray &data)
@@ -134,7 +146,7 @@ void MainWindow::processDistance()
 
     dist_final = hyst_center;
     distance_percent =  ((dist_final-dist_min)/(float)(dist_max-dist_min));
-    qDebug() << "Percent is: " << distance_percent;
+    //qDebug() << "Percent is: " << distance_percent;
 
 
     /* Update picture */
@@ -149,9 +161,12 @@ void MainWindow::processDistance()
 
     if (pic_num != pic_prev) {
         QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
-        qDebug() << "Filename: " << filename;
         pic_prev = pic_num;
-        imageWindow->setPicture(filename);
+
+
+        //imageWindow->setPicture(filename);
+
+        emit pictureReady(filename);
     }
 }
 
@@ -274,3 +289,76 @@ void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
 {
     settings->setValue("smooth", arg1);
 }
+
+
+
+
+
+
+
+Worker::Worker(QObject* thingy, QObject* parent)
+    : QObject(parent)
+{
+    mythingy = thingy;
+    QThread* thread = new QThread(this);
+    this->moveToThread(thread);
+
+    //use a timer to allow the constructor to exit
+    QTimer* timer = new QTimer(this);
+    //timer->setSingleShot(true);
+    timer->start(50);
+    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+
+    //QThread* thisthread = this->thread();
+    //QThread* mainthread = QCoreApplication::instance()->thread();
+    //breakpoint here to check thisthread and mainthread
+    thread->start();
+
+    doWork("");
+}
+
+void Worker::doWork(QString pic)
+{
+    qDebug() << "Thread";
+    QThread* thisthread = this->thread();
+    QThread* mainthread = QCoreApplication::instance()->thread();
+
+
+        imageWindow = new pictureWindow();
+        imageWindow->resize(640,480);
+        imageWindow->move(300, 300);
+        imageWindow->show();
+
+
+
+
+    //breakpoint here to check thisthread and mainthread
+    //deleteObject(mythingy);
+}
+
+void Worker::update()
+{
+    if (picture != pic_prev) {
+        pic_prev = picture;
+        imageWindow->setPicture(picture);
+        qDebug() << "Filename: " << picture;
+
+    }
+}
+
+void Worker::setPicture(QString pic)
+{
+    picture = pic;
+}
+
+
+void MainWindow::deleteObject(QObject* thingy)
+{
+    QThread* thisthread = this->thread();
+    QThread* mainthread = QCoreApplication::instance()->thread();
+    //breakpoint here to check thisthread and mainthread
+    delete thingy;
+}
+
+
+

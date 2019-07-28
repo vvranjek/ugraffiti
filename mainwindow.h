@@ -6,6 +6,7 @@
 #include <QDialog>
 #include <QLabel>
 #include <QPixmap>
+#include <QThread>
 
 #include "picturewindow.h"
 #include "sessionmanager.h"
@@ -14,6 +15,8 @@
 namespace Ui {
 class MainWindow;
 }
+
+
 
 class MainWindow : public QMainWindow
 {
@@ -26,8 +29,11 @@ public:
 signals:
     void openSerial();
     void distanceReceived(int value);
+    void pictureReady(QString pic);
 
 private slots:
+
+    void deleteObject(QObject* thingy);
     void on_ConnectButtonon_released();
     void processDistance();
 
@@ -52,14 +58,17 @@ private slots:
 private:
     Ui::MainWindow *ui;
 
+    QObject* mythingy;
+
     QSettings *settings;
 
     SessionManager *session_mgr;
 
-    pictureWindow *imageWindow;
     QLabel *imageLabel;
 
     QTimer *timerNext;
+
+    //Worker* worker;
 
     float distance;
     float distance_prev;
@@ -82,6 +91,27 @@ private:
     int cityPics(void);
     QString cityFilename(void);
 
+};
+
+
+class Worker : public QObject
+{
+    Q_OBJECT
+public:
+    Worker(QObject* thingy, QObject* parent = 0);
+private:
+    QObject* mythingy;
+    pictureWindow *imageWindow;
+    QString picture;
+
+    QString pic_prev;
+
+signals:
+    void deleteObject(QObject* thingy);
+private slots:
+    void doWork(QString pic);
+    void update();
+    void setPicture(QString pic);
 };
 
 #endif // MAINWINDOW_H
