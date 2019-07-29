@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QSerialPortInfo>
 #include <QFileDialog>
+#include <QFile>
 
 #include <QDebug>
 
@@ -325,7 +326,9 @@ void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
 
 
 Worker::Worker(QObject* thingy, QObject* parent)
-    : QObject(parent)
+    : QObject(parent),
+      running(false),
+      picReady(false)
 {
     mythingy = thingy;
     QThread* thread = new QThread(this);
@@ -334,8 +337,8 @@ Worker::Worker(QObject* thingy, QObject* parent)
     //use a timer to allow the constructor to exit
     QTimer* timer = new QTimer(this);
     //timer->setSingleShot(true);
-    timer->start(50);
-    connect(timer, SIGNAL(timeout()), this, SLOT(update()));
+    //timer->start(50);
+    //connect(timer, SIGNAL(timeout()), this, SLOT(update()));
 
     //QThread* thisthread = this->thread();
     //QThread* mainthread = QCoreApplication::instance()->thread();
@@ -366,17 +369,25 @@ void Worker::doWork(QString pic)
 
 void Worker::update()
 {
-    if (picture != pic_prev) {
+    running = true;
+
+    QFile file(picture);
+
+    if (picture != pic_prev && file.exists()) {
         pic_prev = picture;
         imageWindow->setPicture(picture);
         qDebug() << "Filename: " << picture;
 
     }
+
+
+    running = false;
 }
 
 void Worker::setPicture(QString pic)
 {
     picture = pic;
+    if (!running) update();
 }
 
 

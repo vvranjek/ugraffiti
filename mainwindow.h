@@ -112,6 +112,8 @@ private:
     QString picture;
 
     QString pic_prev;
+    bool running;
+    bool picReady;
 
 signals:
     void deleteObject(QObject* thingy);
