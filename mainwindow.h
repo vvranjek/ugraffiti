@@ -36,6 +36,7 @@ private slots:
     void deleteObject(QObject* thingy);
     void on_ConnectButtonon_released();
     void processDistance();
+    void requestDistance();
 
     void on_max_spinBox_valueChanged(int arg1);
 

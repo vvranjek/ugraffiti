@@ -50,6 +50,10 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(this, &MainWindow::openSerial, session_mgr, &SessionManager::openSerial);
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
 
+    QTimer *timer_laser_request = new QTimer(this);
+    connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
+    timer_laser_request->start(350);
+
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(processDistance()));
     timer->start(30);
@@ -79,33 +83,51 @@ MainWindow::~MainWindow()
 void MainWindow::handleDataReceived(const QByteArray &data)
 {
     //qDebug() << "data: " << data;
-    const QString dist_str = "dist=";
 
 
-    int index = data.lastIndexOf(dist_str);
+    bool laser_meter = true;
 
-    if (index == 0) {
-        //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
-        QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
-        //qDebug() << "distance: " << distance_str;
+    if (laser_meter) {
+        int index_start = data.indexOf(":");
+        int index_end = data.indexOf("m,");
+        if (index_end > 0 && index_start >= 0) {
+            qDebug() << "data: " << data;
+            QString distance_str = data.mid(index_start+1, index_end-1);
+            int distance_int = int(distance_str.toDouble()*100.0);
+            qDebug() << "distance_str: " << distance_str;
+            qDebug() << "distance_int: " << distance_int;
+            distance = distance_int;
+            ui->dist_lcdNumber->display(distance);
+            processDistance();
+        }
 
-
-        int distance_int = distance_str.toInt();
-
-        //qDebug() << "distance: " << distance_int;
-
-        distance = distance_int;
-
-        ui->dist_lcdNumber->display(distance);
-
-       // emit distanceReceived(distance_int);
-
-          // processDistance();
     }
 
+    else {
+        const QString dist_str = "dist=";
 
 
+        int index = data.lastIndexOf(dist_str);
 
+        if (index == 0) {
+            //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
+            QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
+            //qDebug() << "distance: " << distance_str;
+
+
+            int distance_int = distance_str.toInt();
+
+            //qDebug() << "distance: " << distance_int;
+
+            distance = distance_int;
+
+            ui->dist_lcdNumber->display(distance);
+
+           // emit distanceReceived(distance_int);
+
+            //processDistance();
+        }
+    }
 }
 
 void MainWindow::on_ConnectButtonon_released()
@@ -158,7 +180,6 @@ void MainWindow::processDistance()
     //QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
     //imageWindow->setPicture(filename);
 
-
     if (pic_num != pic_prev) {
         QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
         pic_prev = pic_num;
@@ -168,6 +189,11 @@ void MainWindow::processDistance()
 
         emit pictureReady(filename);
     }
+}
+
+void MainWindow::requestDistance()
+{
+    session_mgr->sendToSerial("F\n\r");
 }
 
 int MainWindow::cityPics(void)
@@ -291,11 +317,6 @@ void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
 }
 
 
-
-
-
-
-
 Worker::Worker(QObject* thingy, QObject* parent)
     : QObject(parent)
 {
@@ -359,6 +380,4 @@ void MainWindow::deleteObject(QObject* thingy)
     //breakpoint here to check thisthread and mainthread
     delete thingy;
 }
-
-
 
