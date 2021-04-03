@@ -23,6 +23,7 @@ pictureWindow::pictureWindow(QWidget *parent) :
     //this->setWindowState(this->windowState() | Qt::WindowFullScreen);
 
     //this->setModal(true);
+    on_fullscreenButton_released();
 }
 
 pictureWindow::~pictureWindow()

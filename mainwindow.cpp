@@ -276,6 +276,22 @@ int MainWindow::cityPics(void)
         return ZURICH_MAX;
     case Lyon :
         return LYON_MAX;
+
+    case Amsterdam :
+        return LYON_MAX;
+    case Eindhoven :
+        return EINDHOVEN_MAX;
+    case London :
+        return LONDON_MAX;
+    case Berlin :
+        return BERLIN_MAX;
+    case Dunaj :
+        return DUNAJ_MAX;
+
+
+
+
+
     default :
         return 1;
     }
@@ -297,6 +313,17 @@ QString MainWindow::cityFilename(void)
         return default_location + "/zurich/";
     case Lyon :
         return default_location + "/lyon/";
+
+    case Amsterdam :
+        return default_location + "/lyon/";
+    case Eindhoven :
+        return default_location + "/eindhoven/";
+    case London :
+        return default_location + "/london/";
+    case Berlin :
+        return default_location + "/berlin/";
+    case Dunaj :
+        return default_location + "/dunaj/";
     default :
         return default_location + "/maribor/";
     }

@@ -228,6 +228,7 @@ void SessionManager::readData()
 {
     QByteArray data(serial->readLine());
     emit dataReceived(data);
+    serial->clear();
 }
 
 void SessionManager::sendToSerial(const QByteArray &data)
