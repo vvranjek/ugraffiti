@@ -7,6 +7,7 @@
 #include <QSettings>
 #include <QSerialPortInfo>
 
+
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -14,7 +15,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     distance(200.0),
     city(1),
-    hyst_value(10.0)
+    hyst_value(10.0),
+    initComplete(false)
 {
     ui->setupUi(this);
 
@@ -22,8 +24,8 @@ MainWindow::MainWindow(QWidget *parent) :
     /* THREAD */
 
     mythingy = new QObject(this);
-    QThread* thisthread = this->thread();
-    QThread* mainthread = QCoreApplication::instance()->thread();
+    //QThread* thisthread = this->thread();
+    //QThread* mainthread = QCoreApplication::instance()->thread();
     //breakpoint here to check thisthread and mainthread
     Worker *worker = new Worker(mythingy, this);
     //worker->doWork("");
@@ -45,7 +47,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //imageWindow->showFullScreen();
 
     // handle reception of new data from serial port
-    connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCity()));
+    connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCityTimeout()));
     connect(session_mgr, &SessionManager::dataReceived, this, &MainWindow::handleDataReceived);
     connect(this, &MainWindow::openSerial, session_mgr, &SessionManager::openSerial);
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
@@ -60,6 +62,33 @@ MainWindow::MainWindow(QWidget *parent) :
 
     refreshPorts();
 
+
+    cities_list.append("");
+    cities_list.append("Maribor");
+    cities_list.append("Milano");
+    cities_list.append("Praga");
+    cities_list.append("Zurich");
+    cities_list.append("Lyon");
+    cities_list.append("");
+    cities_list.append("");
+
+    for (int i = 0; i < cities_list.size(); i++) {
+        cities.insert(cities_list.at(i), i);
+        if (QString(cities_list.at(i)).size() > 2 ) {
+            ui->citiesCombo->addItem(cities_list.at(i));
+        }
+
+    }
+
+    citiesPicsMax.insert("Maribor", 413);
+    citiesPicsMax.insert("Milano", 425);
+    citiesPicsMax.insert("Praga", 492);
+    citiesPicsMax.insert("Zurich", 418);
+    citiesPicsMax.insert("Lyon", 449);
+    citiesPicsMax.insert("places_max", 6);
+
+
+
     /* Load settings */
     ui->max_spinBox->setValue(settings->value("dist_max").toInt());
     ui->min_spinBox->setValue(settings->value("dist_min").toInt());
@@ -70,6 +99,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
+
+    initComplete = true;
 
     //on_ConnectButtonon_released();
 }
@@ -173,15 +204,18 @@ void MainWindow::processDistance()
 
     /* Update picture */
     int pic_num;
-    pic_num = (int)(MainWindow::cityPics() * (1.0f-distance_percent));
+    pic_num = (int)(/* citiesPicsMax.value(currentCity)*/  MainWindow::cityPics() * (1.0f-distance_percent));
 
     if (pic_num < 1) pic_num = 1;
+
+    qDebug() << "pic_num is: " << pic_num << "/" << MainWindow::cityPics();
 
     //QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
     //imageWindow->setPicture(filename);
 
     if (pic_num != pic_prev) {
         QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
+        //qDebug() << "Filename: " << filename;
         pic_prev = pic_num;
 
 
@@ -198,6 +232,10 @@ void MainWindow::requestDistance()
 
 int MainWindow::cityPics(void)
 {
+    qDebug() << "max pics: " << citiesPicsMax[cities_list[city]];
+    qDebug() << "Current city: " << cities_list[city];
+    return citiesPicsMax[cities_list[city]];
+
     switch (city) {
     case Maribor :
         return MARIBOR_MAX;
@@ -288,11 +326,6 @@ void MainWindow::on_deviceComboBox_currentIndexChanged(const QString &arg1)
     settings->setValue("port", arg1);
 }
 
-void MainWindow::on_pushButton_2_released()
-{
-    nextCity();
-}
-
 void MainWindow::nextCity()
 {
     city++;
@@ -300,7 +333,16 @@ void MainWindow::nextCity()
         city = 1;
     }
 
+    ui->citiesCombo->setCurrentText(cities_list[city]);
+
     qDebug() << "City: " << city;
+}
+
+void MainWindow::nextCityTimeout()
+{
+    if (ui->timeoutCheckbox->isChecked()) {
+        nextCity();
+    }
 }
 
 void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
@@ -381,3 +423,15 @@ void MainWindow::deleteObject(QObject* thingy)
     delete thingy;
 }
 
+
+void MainWindow::on_citiesCombo_currentTextChanged(const QString &arg1)
+{
+    if (initComplete) {
+        city = cities.value(ui->citiesCombo->currentText());
+    }
+}
+
+void MainWindow::on_nextCityButton_released()
+{
+    nextCity();
+}
