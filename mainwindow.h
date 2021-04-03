@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPixmap>
 #include <QThread>
+#include <QMap>
 
 #include "picturewindow.h"
 #include "sessionmanager.h"
@@ -37,6 +38,7 @@ private slots:
     void deleteObject(QObject* thingy);
     void on_ConnectButtonon_released();
     void processDistance();
+    void requestDistance();
 
     void on_max_spinBox_valueChanged(int arg1);
 
@@ -48,9 +50,8 @@ private slots:
 
     void on_deviceComboBox_currentIndexChanged(const QString &arg1);
 
-    void on_pushButton_2_released();
-
     void nextCity();
+    void nextCityTimeout();
 
     void on_nextCitySpinBox_valueChanged(int arg1);
 
@@ -59,6 +60,10 @@ private slots:
     void on_ConnectButtonon_toggled(bool checked);
 
     void on_artPathButton_released();
+
+    void on_citiesCombo_currentTextChanged(const QString &arg1);
+
+    void on_nextCityButton_released();
 
 private:
     Ui::MainWindow *ui;
@@ -86,8 +91,13 @@ private:
     int dist_max;
 
     int city;
+    bool initComplete;
 
     int pic_prev;
+    QStringList cities_list;
+    QMap<QString, int> cities;
+    QMap<QString, int> citiesPicsMax;
+    QString currentCity;
 
     QString artPath;
 

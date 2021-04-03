@@ -1,7 +1,12 @@
 #ifndef ART_DEFINES_H
 #define ART_DEFINES_H
 
+#include <QMap>
 
+
+
+
+//cities["Maribor"] = 1;
 
 
 

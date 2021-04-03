@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QFile>
 
+
 #include <QDebug>
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -16,7 +17,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     distance(200.0),
     city(1),
-    hyst_value(10.0)
+    hyst_value(10.0),
+    initComplete(false)
 {
     ui->setupUi(this);
 
@@ -24,8 +26,8 @@ MainWindow::MainWindow(QWidget *parent) :
     /* THREAD */
 
     mythingy = new QObject(this);
-    QThread* thisthread = this->thread();
-    QThread* mainthread = QCoreApplication::instance()->thread();
+    //QThread* thisthread = this->thread();
+    //QThread* mainthread = QCoreApplication::instance()->thread();
     //breakpoint here to check thisthread and mainthread
     Worker *worker = new Worker(mythingy, this);
     //worker->doWork("");
@@ -47,17 +49,48 @@ MainWindow::MainWindow(QWidget *parent) :
     //imageWindow->showFullScreen();
 
     // handle reception of new data from serial port
-    connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCity()));
+    connect(timerNext, SIGNAL(timeout()), this, SLOT(nextCityTimeout()));
     connect(session_mgr, &SessionManager::dataReceived, this, &MainWindow::handleDataReceived);
     connect(this, &MainWindow::openSerial, session_mgr, &SessionManager::openSerial);
     connect(this, &MainWindow::closeSerial, session_mgr, &SessionManager::closeSession);
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
+
+    QTimer *timer_laser_request = new QTimer(this);
+    connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
+    timer_laser_request->start(350);
 
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(processDistance()));
     timer->start(30);
 
     refreshPorts();
+
+
+    cities_list.append("");
+    cities_list.append("Maribor");
+    cities_list.append("Milano");
+    cities_list.append("Praga");
+    cities_list.append("Zurich");
+    cities_list.append("Lyon");
+    cities_list.append("");
+    cities_list.append("");
+
+    for (int i = 0; i < cities_list.size(); i++) {
+        cities.insert(cities_list.at(i), i);
+        if (QString(cities_list.at(i)).size() > 2 ) {
+            ui->citiesCombo->addItem(cities_list.at(i));
+        }
+
+    }
+
+    citiesPicsMax.insert("Maribor", 413);
+    citiesPicsMax.insert("Milano", 425);
+    citiesPicsMax.insert("Praga", 492);
+    citiesPicsMax.insert("Zurich", 418);
+    citiesPicsMax.insert("Lyon", 449);
+    citiesPicsMax.insert("places_max", 6);
+
+
 
     /* Load settings */
     ui->max_spinBox->setValue(settings->value("dist_max").toInt());
@@ -70,6 +103,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
+
+    initComplete = true;
 
     //on_ConnectButtonon_released();
 
@@ -85,33 +120,51 @@ MainWindow::~MainWindow()
 void MainWindow::handleDataReceived(const QByteArray &data)
 {
     //qDebug() << "data: " << data;
-    const QString dist_str = "dist=";
 
 
-    int index = data.lastIndexOf(dist_str);
+    bool laser_meter = true;
 
-    if (index == 0) {
-        //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
-        QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
-        //qDebug() << "distance: " << distance_str;
+    if (laser_meter) {
+        int index_start = data.indexOf(":");
+        int index_end = data.indexOf("m,");
+        if (index_end > 0 && index_start >= 0) {
+            qDebug() << "data: " << data;
+            QString distance_str = data.mid(index_start+1, index_end-1);
+            int distance_int = int(distance_str.toDouble()*100.0);
+            qDebug() << "distance_str: " << distance_str;
+            qDebug() << "distance_int: " << distance_int;
+            distance = distance_int;
+            ui->dist_lcdNumber->display(distance);
+            processDistance();
+        }
 
-
-        int distance_int = distance_str.toInt();
-
-        //qDebug() << "distance: " << distance_int;
-
-        distance = distance_int;
-
-        ui->dist_lcdNumber->display(distance);
-
-       // emit distanceReceived(distance_int);
-
-          // processDistance();
     }
 
+    else {
+        const QString dist_str = "dist=";
 
 
+        int index = data.lastIndexOf(dist_str);
 
+        if (index == 0) {
+            //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
+            QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
+            //qDebug() << "distance: " << distance_str;
+
+
+            int distance_int = distance_str.toInt();
+
+            //qDebug() << "distance: " << distance_int;
+
+            distance = distance_int;
+
+            ui->dist_lcdNumber->display(distance);
+
+           // emit distanceReceived(distance_int);
+
+            //processDistance();
+        }
+    }
 }
 
 void MainWindow::on_ConnectButtonon_released()
@@ -180,16 +233,18 @@ void MainWindow::processDistance()
 
     /* Update picture */
     int pic_num;
-    pic_num = (int)(MainWindow::cityPics() * (1.0f-distance_percent));
+    pic_num = (int)(/* citiesPicsMax.value(currentCity)*/  MainWindow::cityPics() * (1.0f-distance_percent));
 
     if (pic_num < 1) pic_num = 1;
+
+    qDebug() << "pic_num is: " << pic_num << "/" << MainWindow::cityPics();
 
     //QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
     //imageWindow->setPicture(filename);
 
-
     if (pic_num != pic_prev) {
         QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
+        //qDebug() << "Filename: " << filename;
         pic_prev = pic_num;
 
 
@@ -199,8 +254,17 @@ void MainWindow::processDistance()
     }
 }
 
+void MainWindow::requestDistance()
+{
+    session_mgr->sendToSerial("F\n\r");
+}
+
 int MainWindow::cityPics(void)
 {
+    qDebug() << "max pics: " << citiesPicsMax[cities_list[city]];
+    qDebug() << "Current city: " << cities_list[city];
+    return citiesPicsMax[cities_list[city]];
+
     switch (city) {
     case Maribor :
         return MARIBOR_MAX;
@@ -291,11 +355,6 @@ void MainWindow::on_deviceComboBox_currentIndexChanged(const QString &arg1)
     settings->setValue("port", arg1);
 }
 
-void MainWindow::on_pushButton_2_released()
-{
-    nextCity();
-}
-
 void MainWindow::nextCity()
 {
     city++;
@@ -303,7 +362,16 @@ void MainWindow::nextCity()
         city = 1;
     }
 
+    ui->citiesCombo->setCurrentText(cities_list[city]);
+
     qDebug() << "City: " << city;
+}
+
+void MainWindow::nextCityTimeout()
+{
+    if (ui->timeoutCheckbox->isChecked()) {
+        nextCity();
+    }
 }
 
 void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
@@ -318,11 +386,6 @@ void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
 {
     settings->setValue("smooth", arg1);
 }
-
-
-
-
-
 
 
 Worker::Worker(QObject* thingy, QObject* parent)
@@ -400,12 +463,21 @@ void MainWindow::deleteObject(QObject* thingy)
 }
 
 
-
-
+void MainWindow::on_citiesCombo_currentTextChanged(const QString &arg1)
+{
+    if (initComplete) {
+        city = cities.value(ui->citiesCombo->currentText());
+    }
+}
 
 void MainWindow::on_artPathButton_released()
 {
     artPath = QFileDialog::getExistingDirectory(this, "Choose path to art folder");
     ui->artPath->setText(artPath);
     settings->setValue("artPath", artPath);
+}
+
+void MainWindow::on_nextCityButton_released()
+{
+    nextCity();
 }
