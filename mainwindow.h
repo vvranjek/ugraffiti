@@ -65,6 +65,8 @@ private slots:
 
     void on_nextCityButton_released();
 
+    //void reset_distance();
+
 private:
     Ui::MainWindow *ui;
 
@@ -81,6 +83,7 @@ private:
     //Worker* worker;
 
     float distance;
+    float distance_limited;
     float distance_prev;
     float distance_percent;
 
@@ -92,6 +95,8 @@ private:
 
     int city;
     bool initComplete;
+
+    qint64 ts;
 
     int pic_prev;
     QStringList cities_list;

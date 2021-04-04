@@ -8,6 +8,7 @@
 #include <QSerialPortInfo>
 #include <QFileDialog>
 #include <QFile>
+#include <QDateTime>
 
 
 #include <QDebug>
@@ -41,7 +42,7 @@ MainWindow::MainWindow(QWidget *parent) :
     session_mgr = new SessionManager(this);
 
 
-        timerNext = new QTimer(this);
+    timerNext = new QTimer(this);
 
 
     //imageWindow->setWindowFlags(Qt::FramelessWindowHint);
@@ -56,6 +57,10 @@ MainWindow::MainWindow(QWidget *parent) :
     //connect(this, &MainWindow::distanceReceived, this, &MainWindow::processDistance);
 
     QTimer *timer_laser_request = new QTimer(this);
+    connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
+    timer_laser_request->start(350);
+
+    QTimer *reset_timer = new QTimer(this);
     connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
     timer_laser_request->start(350);
 
@@ -109,6 +114,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //on_ConnectButtonon_released();
 
     ui->ConnectButtonon->toggle();
+    //on_ConnectButtonon_toggled(false);
 }
 
 MainWindow::~MainWindow()
@@ -169,15 +175,21 @@ void MainWindow::handleDataReceived(const QByteArray &data)
 
 void MainWindow::on_ConnectButtonon_released()
 {
-//    ui->ConnectButtonon->toggle();
+    //ui->ConnectButtonon->toggle();
+
+//    qDebug() << "Connect presse";
 
 //    if (ui->ConnectButtonon->isChecked()) {
+//        qDebug() << "Conect open serial!";
 //        emit openSerial();
 //        ui->ConnectButtonon->setText("Disconnect");
+//        ui->ConnectButtonon->setChecked(true);
 //    }
 //    else {
+//        qDebug() << "Conect close serial!";
 //        emit closeSerial();
 //        ui->ConnectButtonon->setText("Connect");
+//        ui->ConnectButtonon->setChecked(false);
 //    }
 }
 
@@ -194,6 +206,10 @@ void MainWindow::on_ConnectButtonon_toggled(bool checked)
         }
 }
 
+//void void MainWindow::reset_distance() {
+    //pic_num = cityPics();
+//}
+
 
 void MainWindow::processDistance()
 {
@@ -205,13 +221,31 @@ void MainWindow::processDistance()
     float dist_hyst;
     float dist_final;
 
-    if (distance < dist_min - hyst_value) distance = dist_min - hyst_value;
-    if (distance > dist_max + hyst_value) distance = dist_max + hyst_value;
+    qDebug() << "Distance: " << distance;
+    if (distance < dist_min - hyst_value) distance_limited = dist_min - hyst_value;
+    if (distance > dist_max + hyst_value) {
+        // Draghi Ahim, tukaj spremeni stevilo za cas
+        qDebug() << "Max reached: " << QDateTime::currentSecsSinceEpoch() << "/" << ts + 3;
+        if (QDateTime::currentSecsSinceEpoch() > ts + 3) {
+            qDebug() << "RESET reached: ";
+            distance_limited = dist_max-1;
+        }
+        else {
+            distance_limited = distance_prev;
+
+        }
+    }
+    else {
+        distance_limited = distance;
+        qDebug() << "TIMER SET: ";
+        ts = QDateTime::currentSecsSinceEpoch();
+    }
+    //if (distance > dist_max + hyst_value) distance = dist_max + hyst_value;
 
     //distance = 0.98(distance_prev - distance) + 0.2*distance;
 
     /* Smooth filter */
-    dist_filtered = (float)distance_prev + (float)((float)distance - distance_prev)*ui->smooth_SpinBox->value();
+    dist_filtered = (float)distance_prev + (float)((float)distance_limited - distance_prev)*ui->smooth_SpinBox->value();
     distance_prev = dist_filtered;
     ui->dist_filter_lcdNumber->display(dist_filtered);
 
@@ -237,7 +271,7 @@ void MainWindow::processDistance()
 
     if (pic_num < 1) pic_num = 1;
 
-    qDebug() << "pic_num is: " << pic_num << "/" << MainWindow::cityPics();
+    //qDebug() << "pic_num is: " << pic_num << "/" << MainWindow::cityPics();
 
     //QString filename = cityFilename() + QString::number(pic_num) + ".jpg";
     //imageWindow->setPicture(filename);
@@ -261,8 +295,8 @@ void MainWindow::requestDistance()
 
 int MainWindow::cityPics(void)
 {
-    qDebug() << "max pics: " << citiesPicsMax[cities_list[city]];
-    qDebug() << "Current city: " << cities_list[city];
+    //qDebug() << "max pics: " << citiesPicsMax[cities_list[city]];
+    //qDebug() << "Current city: " << cities_list[city];
     return citiesPicsMax[cities_list[city]];
 
     switch (city) {
