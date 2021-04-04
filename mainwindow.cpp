@@ -77,8 +77,13 @@ MainWindow::MainWindow(QWidget *parent) :
     cities_list.append("Praga");
     cities_list.append("Zurich");
     cities_list.append("Lyon");
-    cities_list.append("");
-    cities_list.append("");
+    cities_list.append("Amsterdam");
+    cities_list.append("Eindhoven");
+    cities_list.append("London");
+    cities_list.append("Berlin");
+    cities_list.append("Dunaj");
+    cities_list.append("Custom");
+
 
     for (int i = 0; i < cities_list.size(); i++) {
         cities.insert(cities_list.at(i), i);
@@ -93,7 +98,12 @@ MainWindow::MainWindow(QWidget *parent) :
     citiesPicsMax.insert("Praga", 492);
     citiesPicsMax.insert("Zurich", 418);
     citiesPicsMax.insert("Lyon", 449);
-    citiesPicsMax.insert("places_max", 6);
+    citiesPicsMax.insert("Amsterdam", 424);
+    citiesPicsMax.insert("Eindhoven", 448);
+    citiesPicsMax.insert("London", 460);
+    citiesPicsMax.insert("Berlin", 465);
+    citiesPicsMax.insert("Dunaj", 425);
+    citiesPicsMax.insert("Custom", 450);
 
 
 
@@ -347,9 +357,8 @@ QString MainWindow::cityFilename(void)
         return default_location + "/zurich/";
     case Lyon :
         return default_location + "/lyon/";
-
     case Amsterdam :
-        return default_location + "/lyon/";
+        return default_location + "/amsterdam/";
     case Eindhoven :
         return default_location + "/eindhoven/";
     case London :
@@ -358,8 +367,10 @@ QString MainWindow::cityFilename(void)
         return default_location + "/berlin/";
     case Dunaj :
         return default_location + "/dunaj/";
+    case Custom :
+        return default_location + "/custom/";
     default :
-        return default_location + "/maribor/";
+        return default_location + "/custom/";
     }
 }
 

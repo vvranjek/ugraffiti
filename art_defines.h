@@ -21,6 +21,7 @@ enum places {
     London,
     Berlin,
     Dunaj,
+    Custom,
     places_max
 };
 
