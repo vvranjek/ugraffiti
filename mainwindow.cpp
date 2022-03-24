@@ -19,7 +19,9 @@ MainWindow::MainWindow(QWidget *parent) :
     distance(200.0),
     city(1),
     hyst_value(10.0),
-    initComplete(false)
+    initComplete(false),
+    init_ok(false),
+    startup_complete(false)
 {
     ui->setupUi(this);
 
@@ -44,6 +46,22 @@ MainWindow::MainWindow(QWidget *parent) :
 
     timerNext = new QTimer(this);
 
+    ui->confComboBox->addItem("Old");
+    ui->confComboBox->addItem("New");
+    //ui->confComboBox->setCurrentText("New");
+
+
+
+    ui->MeasuretypeCombo->addItem("Continuous Auto Distance Measure");
+    ui->MeasuretypeCombo->addItem("Continuous Slow Distance Measure");
+    ui->MeasuretypeCombo->addItem("Continuous Fast Distance Measure");
+    ui->MeasuretypeCombo->addItem("Single Auto Distance Measure");
+    ui->MeasuretypeCombo->addItem("Single Slow Distance Measure");
+    ui->MeasuretypeCombo->addItem("Single Fast Distance Measure");
+
+
+
+
 
     //imageWindow->setWindowFlags(Qt::FramelessWindowHint);
     //imageWindow->setWindowState( imageWindow->windowState() | Qt::WindowFullScreen);
@@ -58,11 +76,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QTimer *timer_laser_request = new QTimer(this);
     connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
-    timer_laser_request->start(350);
+    timer_laser_request->start(3500);
 
-    QTimer *reset_timer = new QTimer(this);
-    connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
-    timer_laser_request->start(350);
+    // Init sensor every few seconds
+    QTimer *init_sensor = new QTimer(this);
+    connect(init_sensor, SIGNAL(timeout()), this, SLOT(init_sensor()));
+    init_sensor->start(2000);
 
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(processDistance()));
@@ -115,6 +134,13 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->nextCitySpinBox->setValue(settings->value("next").toInt());
     ui->smooth_SpinBox->setValue(settings->value("smooth").toDouble());
     ui->artPath->setText(settings->value("artPath").toString());
+    ui->confComboBox->setCurrentIndex(settings->value("hw_mode").toInt());
+    ui->MeasuretypeCombo->setCurrentIndex(settings->value("measure_mode").toInt());
+
+    dist_max = ui->max_spinBox->value();
+    dist_min = ui->min_spinBox->value();
+    hyst_value = ui->hyst_spinBox->value();
+
 
 
     timerNext->start(ui->nextCitySpinBox->value()*1000);
@@ -125,6 +151,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     ui->ConnectButtonon->toggle();
     //on_ConnectButtonon_toggled(false);
+
+    startup_complete = true;
+
 }
 
 MainWindow::~MainWindow()
@@ -138,47 +167,94 @@ void MainWindow::handleDataReceived(const QByteArray &data)
     //qDebug() << "data: " << data;
 
 
-    bool laser_meter = true;
+    if (ui->confComboBox->currentText() == "Old") {
+        int laser_meter = 2;
 
-    if (laser_meter) {
-        int index_start = data.indexOf(":");
-        int index_end = data.indexOf("m,");
-        if (index_end > 0 && index_start >= 0) {
-            qDebug() << "data: " << data;
-            QString distance_str = data.mid(index_start+1, index_end-1);
-            int distance_int = int(distance_str.toDouble()*100.0);
-            qDebug() << "distance_str: " << distance_str;
-            qDebug() << "distance_int: " << distance_int;
-            distance = distance_int;
-            ui->dist_lcdNumber->display(distance);
-            processDistance();
+        if (laser_meter == 1) {
+            int index_start = data.indexOf(":");
+            int index_end = data.indexOf("m,");
+            if (index_end > 0 && index_start >= 0) {
+                qDebug() << "data: " << data;
+                QString distance_str = data.mid(index_start+1, index_end-1);
+                int distance_int = int(distance_str.toDouble()*100.0);
+                qDebug() << "distance_str: " << distance_str;
+                qDebug() << "distance_int: " << distance_int;
+                distance = distance_int;
+                ui->dist_lcdNumber->display(distance);
+                processDistance();
+            }
+
+        }
+
+        else if (laser_meter == 2) {
+            int index_start = data.indexOf("DIST;");
+            int index_end = data.indexOf(";AMP");
+            if (index_end > 0 && index_start >= 0) {
+                qDebug() << "data: " << data;
+                QString distance_str = data.mid(index_start+5, index_end-4);
+                int distance_int = int(distance_str.toDouble()*100.0);
+                qDebug() << "distance_str: " << distance_str;
+                qDebug() << "distance_int: " << distance_int;
+                distance = distance_int;
+                ui->dist_lcdNumber->display(distance);
+                processDistance();
+            }
+
+        }
+
+        else {
+            const QString dist_str = "dist=";
+
+
+            int index = data.lastIndexOf(dist_str);
+
+            if (index == 0) {
+                //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
+                QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
+                //qDebug() << "distance: " << distance_str;
+
+
+                int distance_int = distance_str.toInt();
+
+                //qDebug() << "distance: " << distance_int;
+
+                distance = distance_int;
+
+                ui->dist_lcdNumber->display(distance);
+
+               // emit distanceReceived(distance_int);
+
+                //processDistance();
+            }
         }
 
     }
 
-    else {
-        const QString dist_str = "dist=";
+    else if (ui->confComboBox->currentText() == "New") {
+
+        qDebug() << "data1: " << data;
 
 
-        int index = data.lastIndexOf(dist_str);
+        //Data 0xAA 0x00 0x00 0x22 0x00 0x03 0xAABBCCDD 0x0101 Check
 
-        if (index == 0) {
-            //int distance = QString::number(data.mid(data.lastIndexOf(dist_str), data.size()-data.lastIndexOf(dist_str)));
-            QString distance_str = data.mid(index+dist_str.size(), data.size()-dist_str.size());
-            //qDebug() << "distance: " << distance_str;
+        int index_start = data.indexOf(3);
+        //qDebug() << "index_start: " << index_start;
+        int index_end = data.indexOf(0x0101);
+        if (index_start >= 0) {
+            //qDebug() << "data: " << data;
+
+            unsigned int dist_total;
+            dist_total = 255 * (unsigned char)data.at(index_start+1) +
+                    255 * (unsigned char)data.at(index_start+2) +
+                    255 * (unsigned char)data.at(index_start+3) +
+                    (unsigned char)data.at(index_start+4);
 
 
-            int distance_int = distance_str.toInt();
-
-            //qDebug() << "distance: " << distance_int;
-
-            distance = distance_int;
-
+            qDebug() << "dist_total: " << dist_total;
+            distance = dist_total;
             ui->dist_lcdNumber->display(distance);
-
-           // emit distanceReceived(distance_int);
-
-            //processDistance();
+            processDistance();
+            //init_ok = false;
         }
     }
 }
@@ -225,19 +301,17 @@ void MainWindow::processDistance()
 {
     //qDebug() << "Distanc is: " << distance;
 
-
-
     float dist_filtered;
     float dist_hyst;
     float dist_final;
 
-    qDebug() << "Distance: " << distance;
+    //qDebug() << "Distance: " << distance;
     if (distance < dist_min - hyst_value) distance_limited = dist_min - hyst_value;
     if (distance > dist_max + hyst_value) {
         // Draghi Ahim, tukaj spremeni stevilo za cas
-        qDebug() << "Max reached: " << QDateTime::currentSecsSinceEpoch() << "/" << ts + 3;
+        //qDebug() << "Max reached: " << QDateTime::currentSecsSinceEpoch() << "/" << ts + 3;
         if (QDateTime::currentSecsSinceEpoch() > ts + 3) {
-            qDebug() << "RESET reached: ";
+            //qDebug() << "RESET reached: ";
             distance_limited = dist_max-1;
         }
         else {
@@ -247,7 +321,7 @@ void MainWindow::processDistance()
     }
     else {
         distance_limited = distance;
-        qDebug() << "TIMER SET: ";
+        //qDebug() << "TIMER SET: ";
         ts = QDateTime::currentSecsSinceEpoch();
     }
     //if (distance > dist_max + hyst_value) distance = dist_max + hyst_value;
@@ -300,7 +374,78 @@ void MainWindow::processDistance()
 
 void MainWindow::requestDistance()
 {
-    session_mgr->sendToSerial("F\n\r");
+    if (ui->confComboBox->currentText() == "Old") {
+        session_mgr->sendToSerial("F\n\r");
+    }
+
+    else if (ui->confComboBox->currentText() == "New") {
+
+        //qDebug() << "NEWWWWWWW ";
+        //const unsigned char s[] = {0xE2,0x82,0xAC, 0};
+        //Single measure: Data 0xAA 0x80 0x00 0x22 0xA2
+
+
+        //1-shot Auto Distance Measure
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x00 0x21
+        //1-shot Slow Distance Measure
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x01 0x22
+        //1-shot Fast Distance Measure:
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x02 0x23
+
+
+        //Continuous Auto Distance Measure
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x04 0x25
+        //Start Continuous Slow Distance Measure
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x05 0x26
+        //Continuous fast measure
+        //  Data 0xAA 0x00 0x00 0x20 0x00 0x01 0x00 0x06 0x27
+
+        unsigned char* type_data;
+
+        QByteArray c_auto   ("\xaa\x00\x00\x20\x00\x01\x00\x04\x25", 10);
+        QByteArray c_slow   ("\xaa\x00\x00\x20\x00\x01\x00\x05\x26", 10);
+        QByteArray c_fast   ("\xaa\x00\x00\x20\x00\x01\x00\x06\x27", 10);
+        QByteArray shot_auto("\xaa\x00\x00\x20\x00\x01\x00\x00\x21", 10);
+        QByteArray shot_slow("\xaa\x00\x00\x20\x00\x01\x00\x01\x22", 10);
+        QByteArray shot_fast("\xaa\x00\x00\x20\x00\x01\x00\x02\x23", 10);
+
+        QByteArray request_new;
+
+        switch (ui->MeasuretypeCombo->currentIndex()) {
+        case 0:
+            request_new = c_auto;
+            break;
+        case 1:
+            request_new = c_slow;
+            break;
+        case 2:
+            request_new = c_fast;
+            break;
+        case 3:
+            request_new = shot_auto;
+            break;
+        case 4:
+            request_new = shot_slow;
+            break;
+        case 5:
+            request_new = shot_fast;
+            break;
+
+        default:
+            request_new = c_fast;
+            break;
+        }
+
+        //QByteArray request_new(QByteArray::fromRawData((char*)type_data, 10));
+
+        request_new.append("\n\r");
+
+        qDebug() << "Sending" << request_new << '\n';
+        session_mgr->sendToSerial(request_new);
+    }
+
+
+
 }
 
 int MainWindow::cityPics(void)
@@ -376,20 +521,26 @@ QString MainWindow::cityFilename(void)
 
 void MainWindow::on_max_spinBox_valueChanged(int arg1)
 {
-    dist_max = arg1;
-    settings->setValue("dist_max", arg1);
+    if (startup_complete) {
+        dist_max = arg1;
+        settings->setValue("dist_max", arg1);
+    }
 }
 
 void MainWindow::on_min_spinBox_valueChanged(int arg1)
 {
-    dist_min = arg1;
-    settings->setValue("dist_min", arg1);
+    if (startup_complete) {
+        dist_min = arg1;
+        settings->setValue("dist_min", arg1);
+    }
 }
 
 void MainWindow::on_hyst_spinBox_valueChanged(int arg1)
 {
-    hyst_value = arg1;
-    settings->setValue("hyst", arg1);
+    if (startup_complete) {
+        hyst_value = arg1;
+        settings->setValue("hyst", arg1);
+    }
 }
 
 void MainWindow::refreshPorts()
@@ -424,7 +575,9 @@ void MainWindow::refreshPorts()
 
 void MainWindow::on_deviceComboBox_currentIndexChanged(const QString &arg1)
 {
-    settings->setValue("port", arg1);
+    if (startup_complete) {
+        settings->setValue("port", arg1);
+    }
 }
 
 void MainWindow::nextCity()
@@ -448,15 +601,19 @@ void MainWindow::nextCityTimeout()
 
 void MainWindow::on_nextCitySpinBox_valueChanged(int arg1)
 {
-    if (arg1 != 0) {
-        timerNext->start(arg1*1000);
-        settings->setValue("next", arg1);
+    if (startup_complete) {
+        if (arg1 != 0) {
+            timerNext->start(arg1*1000);
+            settings->setValue("next", arg1);
+        }
     }
 }
 
 void MainWindow::on_smooth_SpinBox_valueChanged(double arg1)
 {
-    settings->setValue("smooth", arg1);
+    if (startup_complete) {
+        settings->setValue("smooth", arg1);
+    }
 }
 
 
@@ -544,12 +701,52 @@ void MainWindow::on_citiesCombo_currentTextChanged(const QString &arg1)
 
 void MainWindow::on_artPathButton_released()
 {
-    artPath = QFileDialog::getExistingDirectory(this, "Choose path to art folder");
-    ui->artPath->setText(artPath);
-    settings->setValue("artPath", artPath);
+    if (startup_complete) {
+        artPath = QFileDialog::getExistingDirectory(this, "Choose path to art folder");
+        ui->artPath->setText(artPath);
+        settings->setValue("artPath", artPath);
+    }
 }
 
 void MainWindow::on_nextCityButton_released()
 {
     nextCity();
 }
+
+void MainWindow::on_confComboBox_currentIndexChanged(int index)
+{
+    if (startup_complete) {
+        settings->setValue("hw_mode", index);
+    }
+}
+
+void MainWindow::init_sensor()
+{
+    qDebug() << "Initing: 0x55";
+    QByteArray ba;
+    ba.resize(1);
+    ba[0] = 0x55;
+
+    session_mgr->sendToSerial(ba);
+
+    QTime dieTime= QTime::currentTime().addSecs(1);
+    while (QTime::currentTime() < dieTime)
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+
+    //QByteArray::fromRawData((char*)cart, 7)
+}
+
+//void MainWindow::on_MeasuretypeCombo_currentIndexChanged(const QString &arg1)
+//{
+//    settings->setValue("measure_mode", ui);
+//}
+
+void MainWindow::on_MeasuretypeCombo_currentIndexChanged(int index)
+{
+    if (startup_complete) {
+        qDebug() << "Saving index: " << index;
+        settings->setValue("measure_mode", index);
+    }
+}
+
+

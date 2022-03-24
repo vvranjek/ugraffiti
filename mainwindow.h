@@ -67,6 +67,12 @@ private slots:
 
     //void reset_distance();
 
+    void init_sensor();
+
+    void on_MeasuretypeCombo_currentIndexChanged(int index);
+
+    void on_confComboBox_currentIndexChanged(int index);
+
 private:
     Ui::MainWindow *ui;
 
@@ -79,6 +85,9 @@ private:
     QLabel *imageLabel;
 
     QTimer *timerNext;
+
+    bool init_ok;
+
 
     //Worker* worker;
 
@@ -112,6 +121,8 @@ private:
     void handleDataReceived(const QByteArray &data);
     int cityPics(void);
     QString cityFilename(void);
+
+    bool startup_complete;
 
 };
 
