@@ -383,6 +383,8 @@ void MainWindow::requestDistance()
 
     else if (ui->confComboBox->currentText() == "New") {
 
+        session_mgr->enable_rts();
+
         //qDebug() << "NEWWWWWWW ";
         //const unsigned char s[] = {0xE2,0x82,0xAC, 0};
         //Single measure: Data 0xAA 0x80 0x00 0x22 0xA2

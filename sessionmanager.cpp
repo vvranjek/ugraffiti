@@ -238,11 +238,11 @@ void SessionManager::sendToSerial(const QByteArray &data)
 
 void SessionManager::enable_rts()
 {
-    serial->setDataTerminalReady(true);
+    serial->setRequestToSend(false);
 }
 
 void SessionManager::disable_rts()
 {
-    serial->setDataTerminalReady(false);
+    serial->setRequestToSend(true);
 }
 
