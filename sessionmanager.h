@@ -95,6 +95,9 @@ public:
      */
     void handleTransferCancelledByUser();
 
+    void enable_rts();
+    void disable_rts();
+
 private:
 
     /**

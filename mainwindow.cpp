@@ -154,10 +154,13 @@ MainWindow::MainWindow(QWidget *parent) :
 
     startup_complete = true;
 
+    session_mgr->enable_rts();
+
 }
 
 MainWindow::~MainWindow()
 {
+    session_mgr->disable_rts();
     delete ui;
     //worker->deleteLater();
 }

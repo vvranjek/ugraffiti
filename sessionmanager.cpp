@@ -161,7 +161,7 @@ void SessionManager::openSession(const QString profile)
 void SessionManager::openSerial()
 {
     // try converting port config from the hash
-    QSerialPort::BaudRate baud_rate = QSerialPort::Baud115200;
+    QSerialPort::BaudRate baud_rate = QSerialPort::Baud19200;
     QSerialPort::DataBits data_bits = QSerialPort::Data8;
     QSerialPort::Parity parity = QSerialPort::NoParity;
     QSerialPort::StopBits stop_bits = QSerialPort::OneStop;
@@ -234,5 +234,15 @@ void SessionManager::readData()
 void SessionManager::sendToSerial(const QByteArray &data)
 {
     serial->write(data);
+}
+
+void SessionManager::enable_rts()
+{
+    serial->setDataTerminalReady(true);
+}
+
+void SessionManager::disable_rts()
+{
+    serial->setDataTerminalReady(false);
 }
 
