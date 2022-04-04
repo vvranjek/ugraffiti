@@ -73,6 +73,8 @@ private slots:
 
     void on_confComboBox_currentIndexChanged(int index);
 
+    void on_maxPicspinBox_valueChanged(int arg1);
+
 private:
     Ui::MainWindow *ui;
 

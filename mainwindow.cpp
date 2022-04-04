@@ -60,9 +60,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->MeasuretypeCombo->addItem("Single Fast Distance Measure");
 
 
-
-
-
     //imageWindow->setWindowFlags(Qt::FramelessWindowHint);
     //imageWindow->setWindowState( imageWindow->windowState() | Qt::WindowFullScreen);
     //imageWindow->showFullScreen();
@@ -76,7 +73,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     QTimer *timer_laser_request = new QTimer(this);
     connect(timer_laser_request, SIGNAL(timeout()), this, SLOT(requestDistance()));
-    timer_laser_request->start(3500);
+    timer_laser_request->start(1501);
 
     // Init sensor every few seconds
     QTimer *init_sensor = new QTimer(this);
@@ -122,7 +119,8 @@ MainWindow::MainWindow(QWidget *parent) :
     citiesPicsMax.insert("London", 460);
     citiesPicsMax.insert("Berlin", 465);
     citiesPicsMax.insert("Dunaj", 425);
-    citiesPicsMax.insert("Custom", 450);
+    citiesPicsMax.insert("Custom", settings->value("maxPics").toInt());
+    ui->maxPicspinBox->setValue(cityPics());
 
 
 
@@ -136,6 +134,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->artPath->setText(settings->value("artPath").toString());
     ui->confComboBox->setCurrentIndex(settings->value("hw_mode").toInt());
     ui->MeasuretypeCombo->setCurrentIndex(settings->value("measure_mode").toInt());
+    //ui->maxPicspinBox->setValue(settings->value("maxPics").toInt());
 
     dist_max = ui->max_spinBox->value();
     dist_min = ui->min_spinBox->value();
@@ -459,6 +458,7 @@ int MainWindow::cityPics(void)
     //qDebug() << "Current city: " << cities_list[city];
     return citiesPicsMax[cities_list[city]];
 
+    /*
     switch (city) {
     case Maribor :
         return MARIBOR_MAX;
@@ -482,6 +482,10 @@ int MainWindow::cityPics(void)
     case Dunaj :
         return DUNAJ_MAX;
 
+    case Custom :
+        ui->maxPicspinBox->setValue(settings->value("maxPics").toInt());
+        return ui->maxPicspinBox->value();
+
 
 
 
@@ -489,6 +493,8 @@ int MainWindow::cityPics(void)
     default :
         return 1;
     }
+
+    */
 }
 
 QString MainWindow::cityFilename(void)
@@ -702,6 +708,15 @@ void MainWindow::on_citiesCombo_currentTextChanged(const QString &arg1)
     if (initComplete) {
         city = cities.value(ui->citiesCombo->currentText());
     }
+
+    ui->maxPicspinBox->setValue(cityPics());
+
+    if (arg1 == "Custom") {
+        ui->maxPicspinBox->setEnabled(true);
+    }
+    else {
+        ui->maxPicspinBox->setEnabled(false);
+    }
 }
 
 void MainWindow::on_artPathButton_released()
@@ -754,4 +769,18 @@ void MainWindow::on_MeasuretypeCombo_currentIndexChanged(int index)
     }
 }
 
+
+
+void MainWindow::on_maxPicspinBox_valueChanged(int arg1)
+{
+    if (ui->citiesCombo->currentText() == "Custom") {
+        settings->setValue("maxPics", arg1);
+        citiesPicsMax.insert(citiesPicsMax.find("Custom"), "Custom", arg1);
+        qDebug() << "CUSTOM!  "  << arg1 ;
+        qDebug() << "CUSTOM!  "  << settings->value("maxPics").toInt() ;
+    }
+    else {
+        qDebug() << "NOT CUSTOM!!!";
+    }
+}
 

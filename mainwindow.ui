@@ -20,7 +20,7 @@
       <x>70</x>
       <y>20</y>
       <width>414</width>
-      <height>249</height>
+      <height>250</height>
      </rect>
     </property>
     <layout class="QGridLayout" name="gridLayout">
@@ -236,6 +236,23 @@
       <widget class="QPushButton" name="artPathButton">
        <property name="text">
         <string>Set art path</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="4">
+      <widget class="QSpinBox" name="maxPicspinBox">
+       <property name="maximum">
+        <number>99999</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Pics:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
